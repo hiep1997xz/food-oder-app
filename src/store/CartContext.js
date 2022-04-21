@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useReducer } from 'react'
 
 export const CartContext = React.createContext({
   items: [],
@@ -6,19 +6,64 @@ export const CartContext = React.createContext({
   addItem: (item) => {},
   removeItem: (id) => {},
 })
-const CartProvider = (props) => {
-  const handleAddToCart = (item) => {}
 
-  const handleRemoveCart = (id) => {}
+const defaultCartState = {
+  items: [],
+  totalAmount: 0,
+}
+
+const carReducer = (state, action) => {
+  if(action.type === 'ADD'){
+    const existingCartItemIndex = state.items.findIndex((item) => item.id === action.item.id)
+    const existingCarItem = state.items[existingCartItemIndex]
+    const updateTotalAmount = state.totalAmount + action.item.price * action.item.amount;
+    let updateItems
+
+    if(existingCarItem){
+      const updateItem={
+        ...existingCarItem,
+        amount: existingCarItem.amount + action.item.amount
+      }
+      updateItems =[...state.items]
+      updateItems[existingCarItem] = updateItem
+    }else{
+      updateItems = state.items.concat(action.item)
+    }
+    
+    return{
+      items: updateItems,
+      totalAmount: updateTotalAmount,
+    }
+  }
+  if(action.type === 'REMOVE'){
+
+  }
+  return defaultCartState;
+}
+
+const CartProvider = (props) => {
+  const[cartState, dispatchCartAction] = useReducer(carReducer, defaultCartState);
+
+  const handleAddToCart = (item) => {
+    dispatchCartAction({type: "ADD", item: item})
+  }
+
+  const handleRemoveCart = (id) => {
+    dispatchCartAction({type: "REMOVE", id: id})
+  }
 
   const cartContext = {
-    items: [],
-    totalAmount: 0,
+    items: cartState.items,
+    totalAmount: cartState.totalAmount,
     addItem: handleAddToCart,
     removeItem: handleRemoveCart,
   }
 
-  return <CartContext.Provider value={cartContext}>{props.children}</CartContext.Provider>
+  return (
+    <CartContext.Provider value={cartContext}>
+      {props.children}
+    </CartContext.Provider>
+  )
 }
 
 export default CartProvider
